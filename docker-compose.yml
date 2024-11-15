@@ -1,0 +1,9 @@
+version: '3'
+services:
+  matrix-multiplication:
+    build: .
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ./results:/app/results
