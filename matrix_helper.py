@@ -3,6 +3,11 @@ import numpy as np
 import time
 from datetime import datetime
 import os
+import sys
+
+
+sys.dont_write_bytecode = True
+
 
 class MatrixOperations:
     def __init__(self):
