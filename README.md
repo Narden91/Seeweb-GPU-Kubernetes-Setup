@@ -40,5 +40,3 @@ The results of the benchmark will be saved in the specified S3 bucket under the 
 ## License
 This project is licensed under the MIT License.
 ```
-
-kubectl create secret docker-registry ghcr-secret --docker-server=ghcr.io --docker-username=narden91 --docker-password=$GITHUB_PAT --docker-email=eminik2006@gmail.com
