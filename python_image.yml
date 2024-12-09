@@ -5,10 +5,12 @@ metadata:
 spec:
   restartPolicy: OnFailure
   runtimeClassName: seeweb-nvidia-1xa6000
+  imagePullSecrets:
+    - name: ghcr-secret
   containers:
   - name: nvidia
     image: "ghcr.io/narden91/k8s_test:sha-6a6213e"
-    command: ["python3"]
+    command: ["python"]
     args: ["main.py"]
     imagePullPolicy: Always
     resources:
@@ -17,5 +19,3 @@ spec:
     envFrom:
       - secretRef:
           name: s3-secrets
-  imagePullSecrets:
-  - name: ghcr-secret

@@ -15,11 +15,5 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # Copy project files maintaining directory structure
 COPY . .
 
-# # Create results directory (if not already in project)
-# RUN mkdir -p /app/results
-
-# # Set environment variables
-# ENV RESULTS_DIR=/app/results
-
 # Command to run the script
 CMD ["python3", "main.py"]
