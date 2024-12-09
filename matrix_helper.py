@@ -14,10 +14,10 @@ class MatrixOperations:
         self.cuda_available = torch.cuda.is_available()
         self.gpu_device = torch.device("cuda" if self.cuda_available else "cpu")
         self.cpu_device = torch.device("cpu")
-        self.results_dir = os.getenv('RESULTS_DIR', 'results')
+        # self.results_dir = os.getenv('RESULTS_DIR', 'results')
         
-        # Create results directory if it doesn't exist
-        os.makedirs(self.results_dir, exist_ok=True)
+        # # Create results directory if it doesn't exist
+        # os.makedirs(self.results_dir, exist_ok=True)
         
     def get_device_info(self):
         """

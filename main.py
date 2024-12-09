@@ -1,17 +1,17 @@
+import sys
+
+sys.dont_write_bytecode = True
+
 from matrix_helper import MatrixOperations
 from datetime import datetime
 import os
 from config.config import config
-import sys
 import boto3
 import io
 from rich import print as rprint
 from rich.console import Console
 
 console = Console()
-
-
-sys.dont_write_bytecode = True
 
 
 def save_results(results, device_info, s3_client, bucket_name):
