@@ -1,4 +1,5 @@
 import sys
+import argparse
 
 sys.dont_write_bytecode = True
 
@@ -10,37 +11,79 @@ import boto3
 import io
 from rich import print as rprint
 from rich.console import Console
+from rich.panel import Panel
+from rich.style import Style
 
 console = Console()
 
 
+def parse_matrix_sizes(sizes_str):
+    """
+    Parse matrix sizes string into a list of integers
+    
+    Args:
+    - sizes_str: Comma-separated string of matrix sizes
+    
+    Returns:
+    - List of integers representing matrix sizes
+    """
+    try:
+        return [int(size.strip()) for size in sizes_str.split(',')]
+    except ValueError:
+        raise argparse.ArgumentTypeError("Matrix sizes must be comma-separated integers")
+
+def parse_arguments():
+    """
+    Parse command line arguments
+    
+    Returns:
+    - Parsed argument namespace
+    """
+    parser = argparse.ArgumentParser(description='Matrix multiplication benchmark')
+    parser.add_argument(
+        '--matrix-sizes',
+        type=parse_matrix_sizes,
+        help='Comma-separated list of matrix sizes (e.g., 1000,2000,3000)'
+    )
+    return parser.parse_args()
+
+def get_matrix_sizes():
+    """
+    Get matrix sizes from command line or environment variable
+    
+    Returns:
+    - tuple: (list of sizes, source of sizes)
+    """
+    args = parse_arguments()
+    
+    # Check command line arguments first
+    if args.matrix_sizes is not None:
+        return args.matrix_sizes, "command line"
+    
+    # Check environment variable
+    env_sizes = os.getenv('MATRIX_SIZES')
+    if env_sizes:
+        return parse_matrix_sizes(env_sizes), "environment variable"
+    
+    # Use default values if neither is provided
+    default_sizes = [1000, 2000, 3000]
+    return default_sizes, "default values"
+
 def save_results(results, device_info, s3_client, bucket_name):
     """
     Save benchmark results to a file in S3 bucket
-    
-    Args:
-    - results: List of dictionaries containing benchmark results
-    - device_info: Dictionary containing information about the device
-    - s3_client: Boto3 S3 client
-    - bucket_name: Name of the S3 bucket
-    
-    Returns:
-    - URL of the file in S3
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"matrix_multiplication_benchmark_{timestamp}.txt"
     
-    # Create string buffer to write results
     buffer = io.StringIO()
     
-    # Write header with device information
     buffer.write("Matrix Multiplication Benchmark Results\n")
     buffer.write("=====================================\n")
     buffer.write("\nDevice Information:\n")
     for key, value in device_info.items():
         buffer.write(f"{key}: {value}\n")
     
-    # Write benchmark results
     buffer.write("\nBenchmark Results:\n")
     buffer.write("=====================================\n")
     buffer.write(f"{'Matrix Size':^12} | {'CPU Time (s)':^12} | {'GPU Time (s)':^12} | {'Speedup':^12}\n")
@@ -49,10 +92,8 @@ def save_results(results, device_info, s3_client, bucket_name):
     for result in results:
         gpu_time = f"{result['gpu_time']:.6f}" if result['gpu_time'] is not None else "N/A"
         speedup = f"{result['speedup']:.2f}x" if result['speedup'] is not None else "N/A"
-        
         buffer.write(f"{result['size']:^12} | {result['cpu_time']:^12.6f} | {gpu_time:^12} | {speedup:^12}\n")
     
-    # Upload to S3
     s3_client.put_object(
         Bucket=bucket_name,
         Key=f"benchmark_results/{filename}",
@@ -66,12 +107,19 @@ def save_results(results, device_info, s3_client, bucket_name):
 def main():
     """
     Main function to run the matrix multiplication benchmark
-    
-    This function will:
-    - Initialize the MatrixOperations class
-    - Run the benchmark for different matrix sizes
-    - Save the results to a file in S3
     """
+    # Get matrix sizes and their source
+    sizes, source = get_matrix_sizes()
+    
+    # Print configuration information using rich
+    console.print(Panel(
+        f"[bold green]Matrix Multiplication Benchmark Configuration[/]\n\n"
+        f"[yellow]Matrix sizes source:[/] {source}\n"
+        f"[yellow]Matrix sizes:[/] {', '.join(map(str, sizes))}",
+        title="Configuration",
+        style="blue"
+    ))
+    
     credentials = config.get_aws_credentials()
     s3_client = boto3.client(
         's3',
@@ -81,25 +129,38 @@ def main():
     )
     
     ops = MatrixOperations()
-    sizes = [1000, 2000, 3000]
     
-    console.log("Starting Matrix Multiplication Benchmark...")
-    console.log("Testing matrix sizes:", sizes)
-    
+    console.print("\n[bold cyan]Starting benchmark...[/]")
     results, device_info = ops.run_comparison(sizes)
     
     filename = save_results(results, device_info, s3_client, config.s3_bucket)
     
-    console.log(f"\nBenchmark complete! Results saved to: {filename}")
+    console.print(f"\n[green]Benchmark complete! Results saved to:[/] {filename}")
     
-    console.log("\nSummary:")
-    console.log("-" * 55)
-    console.log(f"{'Matrix Size':^12} | {'CPU Time (s)':^12} | {'GPU Time (s)':^12} | {'Speedup':^12}")
-    console.log("-" * 55)
+    # Print results table
+    console.print("\n[bold]Summary:[/]")
+    console.print("─" * 55)
+    console.print(f"{'Matrix Size':^12} | {'CPU Time (s)':^12} | {'GPU Time (s)':^12} | {'Speedup':^12}")
+    console.print("─" * 55)
+    
     for result in results:
         gpu_time = f"{result['gpu_time']:.6f}" if result['gpu_time'] is not None else "N/A"
         speedup = f"{result['speedup']:.2f}x" if result['speedup'] is not None else "N/A"
-        console.log(f"{result['size']:^12} | {result['cpu_time']:^12.6f} | {gpu_time:^12} | {speedup:^12}")
+        
+        # Color-code the speedup values
+        if result['speedup'] and result['speedup'] > 2:
+            speedup_color = "bright_green"
+        elif result['speedup'] and result['speedup'] > 1:
+            speedup_color = "green"
+        else:
+            speedup_color = "yellow"
+            
+        console.print(
+            f"{result['size']:^12} | "
+            f"{result['cpu_time']:^12.6f} | "
+            f"{gpu_time:^12} | "
+            f"[{speedup_color}]{speedup:^12}[/]"
+        )
 
 
 if __name__ == "__main__":
