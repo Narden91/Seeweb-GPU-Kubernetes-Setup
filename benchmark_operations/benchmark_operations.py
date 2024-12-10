@@ -1,24 +1,17 @@
 import torch
 import numpy as np
 import time
-from datetime import datetime
-import os
-import sys
+from rich.console import Console
 
+console = Console()
 
-sys.dont_write_bytecode = True
-
-
-class MatrixOperations:
+class BenchmarkOperations:
     def __init__(self):
+        """Initialize benchmark operations with CUDA availability check"""
         self.cuda_available = torch.cuda.is_available()
         self.gpu_device = torch.device("cuda" if self.cuda_available else "cpu")
         self.cpu_device = torch.device("cpu")
-        # self.results_dir = os.getenv('RESULTS_DIR', 'results')
-        
-        # # Create results directory if it doesn't exist
-        # os.makedirs(self.results_dir, exist_ok=True)
-        
+
     def get_device_info(self):
         """
         Return information about the CUDA device if available
@@ -51,7 +44,6 @@ class MatrixOperations:
         end_time = time.perf_counter()
         
         result = result.cpu().numpy()
-        
         return result, end_time - start_time
 
     def matrix_multiply_cpu(self, matrix_a, matrix_b):
@@ -69,33 +61,31 @@ class MatrixOperations:
 
     def run_comparison(self, sizes=[1000, 2000, 3000, 4000]):
         """
-        Run comparison tests and save results
+        Run comparison tests for different matrix sizes
         """
         results = []
         device_info = self.get_device_info()
         
         for size in sizes:
-            print(f"\nTesting {size}x{size} matrices...")
+            console.print(f"\nTesting {size}x{size} matrices...")
             
             matrix_a = np.random.rand(size, size)
             matrix_b = np.random.rand(size, size)
             
-            print("Running CPU multiplication...")
+            console.print("Running CPU multiplication...")
             _, cpu_time = self.matrix_multiply_cpu(matrix_a, matrix_b)
             
-            gpu_time = 0
+            gpu_time = None
             if self.cuda_available:
-                print("Running GPU multiplication...")
+                console.print("Running GPU multiplication...")
                 _, gpu_time = self.matrix_multiply_gpu(matrix_a, matrix_b)
+                torch.cuda.empty_cache()
             
             results.append({
                 'size': size,
                 'cpu_time': cpu_time,
-                'gpu_time': gpu_time if self.cuda_available else None,
-                'speedup': (cpu_time / gpu_time) if self.cuda_available and gpu_time > 0 else None
+                'gpu_time': gpu_time,
+                'speedup': (cpu_time / gpu_time) if gpu_time and gpu_time > 0 else None
             })
-            
-            if self.cuda_available:
-                torch.cuda.empty_cache()
         
         return results, device_info

@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: matrix-benchmark-config
+data:
+  MATRIX_SIZES: "1000,2000,3000,4000,5000"
