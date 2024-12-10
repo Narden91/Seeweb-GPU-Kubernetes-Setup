@@ -8,12 +8,14 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
+# Install PyTorch with CUDA support
+RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
 # Copy requirements and install dependencies
 COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Copy project files maintaining directory structure
+# Copy project files
 COPY . .
 
-# Command to run the script
 CMD ["python3", "main.py"]
