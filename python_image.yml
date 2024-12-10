@@ -1,21 +1,21 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: python-test
+  name: python-test    # This defines the name of the pod in the cluster
 spec:
-  restartPolicy: OnFailure
-  runtimeClassName: seeweb-nvidia-1xa6000
+  restartPolicy: OnFailure    # The pod will not restart if the process completes successfully
+  runtimeClassName: seeweb-nvidia-1xa6000    # This specifies your GPU runtime configuration
   imagePullSecrets:
-    - name: ghcr-secret
+    - name: ghcr-secret    # This secret containsGitHub Container Registry credentials
   containers:
   - name: nvidia
-    image: "ghcr.io/narden91/k8s_test:sha-6a6213e"
-    command: ["python"]
-    args: ["main.py"]
-    imagePullPolicy: Always
+    image: "ghcr.io/narden91/k8s_test:sha-8893916"    
+    command: ["python"]        # The command to run inside the container
+    args: ["main.py"]          # Arguments passed to the command
+    imagePullPolicy: Always    # Forces Kubernetes to pull the image every time
     resources:
       limits:
-        nvidia.com/gpu: "1"
+        nvidia.com/gpu: "1"    # Requests one GPU for the container
     envFrom:
       - secretRef:
-          name: s3-secrets
+          name: s3-secrets    

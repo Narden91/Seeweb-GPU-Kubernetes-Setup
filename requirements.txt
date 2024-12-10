@@ -1,9 +1,7 @@
-torch>=2.0.0  
-numpy>=1.21.0  
-
-boto3>=1.26.0  
-botocore>=1.29.0 
-
-python-dotenv>=0.19.0 
-
-pytz>=2021.3  
+datetime
+python-dotenv
+boto3
+rich
+torch
+numpy
+typing
