@@ -5,7 +5,7 @@ metadata:
   namespace: default
 spec:
   restartPolicy: OnFailure
-  runtimeClassName: seeweb-nvidia-1xa6000
+  runtimeClassName: seeweb-nvidia-1xa6000 # 2xa6000
   imagePullSecrets:
     - name: ghcr-secret
   containers:
@@ -19,4 +19,4 @@ spec:
       - secretRef:
           name: s3-secrets
       - configMapRef:
-          name: matrix-benchmark-config  
+          name: matrix-benchmark-config

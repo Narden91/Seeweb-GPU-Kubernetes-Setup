@@ -2,7 +2,7 @@ import sys
 
 sys.dont_write_bytecode = True
 
-from config.config import config
+from config.s3_config_handler import ConfigHandler
 from s3_operations.s3_operations import S3Operations
 from benchmark_operations.benchmark_operations import BenchmarkOperations
 from cli_operations.cli_operations import CLIOperations
@@ -17,6 +17,9 @@ def main():
     # Initialize operations
     cli_ops = CLIOperations()
     sizes, source = cli_ops.get_matrix_sizes()
+    
+    # Initialize configuration handler for S3 access
+    config = ConfigHandler()
     
     # Initialize S3 operations
     s3_ops = S3Operations(config.get_aws_credentials(), config.s3_bucket)

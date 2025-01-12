@@ -1,49 +1,83 @@
-# Matrix Multiplication Benchmark
+# Python Project Template with k8s Serverless Architecture
+
+# Author
+
+Emanuele Nardone
 
 ## Overview
-A containerized application that performs matrix multiplication benchmarks comparing CPU and GPU performance. 
-The project is designed to run in a Seeweb Serverless GPU Cluster.
-The project also utilize GitHub Container Registry (GHCR) for image storage and S3-compatible storage for results.
+A containerized application that performs matrix multiplication benchmarks comparing CPU and GPU performance using PyTorch. The project is designed to run in a Seeweb Serverless GPU Cluster with NVIDIA A6000 GPUs. Results are stored in S3-compatible storage, and container images are managed through GitHub Container Registry (GHCR).
+
+## Features
+- CPU vs GPU matrix multiplication benchmarking
+- Configurable matrix sizes via CLI arguments or environment variables
+- Automatic GPU detection and fallback to CPU
+- Detailed performance metrics and speedup calculations
+- S3-compatible storage for benchmark results
+- Rich CLI output with colored performance indicators
+- Exponential backoff retry mechanism for S3 operations
+- Comprehensive logging system
 
 ## Project Structure
 ```
 matrix-benchmark/
 ├── benchmark_operations/      # Matrix multiplication and benchmark logic
-│   ├── __init__.py
-│   └── benchmark_operations.py
+│   └── benchmark_operations.py  # PyTorch-based CPU/GPU computations
 ├── cli_operations/           # Command-line interface operations
-│   ├── __init__.py
-│   └── cli_operations.py
+│   └── cli_operations.py     # CLI argument parsing and result display
 ├── config/                   # Configuration management
-│   ├── __init__.py
-│   └── config.py
+│   └── s3_config_handler.py  # S3 credentials and configuration
 ├── s3_operations/           # S3 storage operations
-│   ├── __init__.py
-│   └── s3_operations.py
+│   ├── s3_client.py         # Low-level S3 client with retry logic
+│   └── s3_operations.py     # High-level S3 operations
+├── .env.test               # Template for environment variables
 ├── .gitignore              # Git ignore rules
-├── Dockerfile              # Docker container configuration
-├── main.py                 # Main application entry point
-├── matrix_config.yml       # ConfigMap for matrix sizes
+├── Dockerfile              # NVIDIA CUDA-based container configuration
+├── main.py                 # Application entry point
 ├── python_image.yml        # Kubernetes pod configuration
-├── README.md              # Project documentation
-└── requirements.txt       # Python dependencies
+└── requirements.txt        # Python dependencies
 ```
 
-## Kubernetes Setup
+## Prerequisites
+- Kubernetes cluster with NVIDIA GPU support
+- NVIDIA Container Toolkit
+- Access to GitHub Container Registry
+- S3-compatible storage
+- kubectl CLI tool
+- Python 3.8+ (for local development)
 
-### 1. Create GitHub Container Registry Secret
+## Environment Variables
+Create a `.env` file based on `.env.test`:
 ```bash
-# Create a Personal Access Token (PAT) in GitHub with read:packages scope
+S3_ENDPOINT_URL=your-s3-endpoint
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+S3_BUCKET=your-bucket-name
+MATRIX_SIZES=1000,2000,3000  # Optional, can be set via CLI
+```
+
+## Kubernetes Deployment
+
+### 1. GPU Runtime Configuration
+The project uses the `seeweb-nvidia-1xa6000` runtime class for NVIDIA A6000 GPU access:
+```yaml
+spec:
+  runtimeClassName: seeweb-nvidia-1xa6000
+  containers:
+    - resources:
+        limits:
+          nvidia.com/gpu: "1"
+```
+
+### 2. Create Required Secrets
+```bash
+# GitHub Container Registry credentials
 kubectl create secret docker-registry ghcr-secret \
   --docker-server=ghcr.io \
   --docker-username=YOUR_GITHUB_USERNAME \
   --docker-password=YOUR_GITHUB_PAT \
   --docker-email=YOUR_GITHUB_EMAIL
-```
 
-### 2. Create AWS Credentials Secret
-```bash
-# Create secret for S3 credentials
+# S3 credentials
 kubectl create secret generic s3-secrets \
   --from-literal=S3_ENDPOINT_URL='your-s3-endpoint' \
   --from-literal=AWS_ACCESS_KEY_ID='your-access-key' \
@@ -51,263 +85,98 @@ kubectl create secret generic s3-secrets \
   --from-literal=S3_BUCKET='your-bucket-name'
 ```
 
-### 3. Apply ConfigMap for Matrix Sizes
+### 3. Create ConfigMap for Matrix Sizes
 ```bash
-# Apply the ConfigMap for matrix sizes
-kubectl apply -f matrix_config.yml
+kubectl create configmap matrix-benchmark-config \
+  --from-literal=MATRIX_SIZES="1000,2000,3000,4000,5000"
 ```
 
 ### 4. Deploy the Application
 ```bash
-# Deploy the pod
 kubectl apply -f python_image.yml
 ```
 
-## Configuration Files
+## CI/CD Pipeline
+The project uses GitHub Actions for automated builds and deployments:
 
-### matrix_config.yml
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: matrix-benchmark-config
-data:
-  MATRIX_SIZES: "1000,2000,3000,4000,5000"
+- Builds trigger on version tags (v*.*.*)
+- Uses NVIDIA CUDA 11.8.0 base image
+- Pushes to GitHub Container Registry
+- Tags images with semantic version and Git SHA
+
+### Triggering a Build
+```bash
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
-### python_image.yml
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: python-test
-  namespace: default
-spec:
-  restartPolicy: OnFailure
-  runtimeClassName: seeweb-nvidia-1xa6000  # Adjust based on your cluster's GPU setup
-  imagePullSecrets:
-    - name: ghcr-secret
-  containers:
-  - name: nvidia
-    image: "ghcr.io/your-username/k8s_test:latest"    
-    imagePullPolicy: Always
-    resources:
-      limits:
-        nvidia.com/gpu: "1"
-    envFrom:
-      - secretRef:
-          name: s3-secrets
-      - configMapRef:
-          name: matrix-benchmark-config
+## Local Development
+
+### 1. Setup Environment
+```bash
+python -m venv venv
+source venv/bin/activate  # or `venv\Scripts\activate` on Windows
+pip install -r requirements.txt
 ```
 
-## Kubernetes Operations
+### 2. Build Docker Image
+```bash
+docker build -t ghcr.io/your-username/matrix-benchmark:dev .
+```
 
-### Monitor Pod Status
+### 3. Run Locally
+```bash
+# With default matrix sizes
+python main.py
+
+# With custom matrix sizes
+python main.py --matrix-sizes 1000,2000,3000
+```
+
+## Monitoring and Troubleshooting
+
+### Pod Status
 ```bash
 # Check pod status
 kubectl get pods
-
-# View pod logs
-kubectl logs -f python-test
-
-# Describe pod for detailed information
 kubectl describe pod python-test
+
+# View logs
+kubectl logs -f python-test
 ```
 
-### Delete Resources
-```bash
-# Delete pod
-kubectl delete pod python-test
+### Common Issues and Solutions
 
-# Delete secrets
-kubectl delete secret s3-secrets
-kubectl delete secret ghcr-secret
+1. **GPU Not Detected**
+   - Check runtime class configuration
+   - Verify NVIDIA device plugin is running
+   ```bash
+   kubectl get pods -n kube-system | grep nvidia-device-plugin
+   ```
 
-# Delete ConfigMap
-kubectl delete configmap matrix-benchmark-config
+2. **S3 Connection Issues**
+   - The application implements exponential backoff
+   - Check S3 endpoint and credentials
+   - Review pod logs for specific error messages
+
+3. **Performance Issues**
+   - Monitor GPU utilization:
+   ```bash
+   kubectl exec -it python-test -- nvidia-smi
+   ```
+   - Check memory allocation in logs
+
+## Benchmark Results
+Results are stored in the S3 bucket under `benchmark_results/` with the format:
+```
+matrix_multiplication_benchmark_YYYYMMDD_HHMMSS.txt
 ```
 
-### Scale Resources (Optional)
-```bash
-# Create a deployment instead of a pod for scaling
-kubectl create deployment matrix-benchmark --image=ghcr.io/your-username/k8s_test:latest
-
-# Scale the deployment
-kubectl scale deployment matrix-benchmark --replicas=3
-```
-
-## Development
-
-### Local Testing
-1. Build the Docker image:
-   ```bash
-   docker build -t ghcr.io/your-username/k8s_test:latest .
-   ```
-
-2. Push to GitHub Container Registry:
-   ```bash
-   docker login ghcr.io -u YOUR_GITHUB_USERNAME -p YOUR_GITHUB_PAT
-   docker push ghcr.io/your-username/k8s_test:latest
-   ```
-
-## Results
-- Benchmark results are automatically saved to the configured S3 bucket
-- Results location: `s3://your-bucket-name/benchmark_results/`
-- Each file includes device information, matrix sizes, and timing comparisons
-
-## Requirements
-- Kubernetes cluster with GPU support
-- NVIDIA Container Toolkit
-- Access to GitHub Container Registry
-- S3-compatible storage
-- kubectl CLI tool
-
-## CI/CD with GitHub Actions
-
-### GitHub Actions Setup
-
-1. **Create GitHub Secrets**
-   Navigate to your repository's Settings > Secrets and Variables > Actions and add:
-   ```
-   GHCR_TOKEN          # GitHub PAT with write:packages permission
-   GHCR_USERNAME       # Your GitHub username
-   ```
-
-2. **Workflow Configuration**
-   Create `.github/workflows/docker-build.yml`:
-   ```yaml
-   name: Docker Build and Push
-
-   on:
-     push:
-       tags:
-         - 'v*'  # Triggers on version tags (v1.0.0, v2.1.0, etc.)
-
-   env:
-     REGISTRY: ghcr.io
-     IMAGE_NAME: ${{ github.repository }}
-
-   jobs:
-     build-and-push:
-       runs-on: ubuntu-latest
-       permissions:
-         contents: read
-         packages: write
-
-       steps:
-         - name: Checkout repository
-           uses: actions/checkout@v4
-
-         - name: Log in to the Container registry
-           uses: docker/login-action@v3
-           with:
-             registry: ${{ env.REGISTRY }}
-             username: ${{ github.actor }}
-             password: ${{ secrets.GITHUB_TOKEN }}
-
-         - name: Extract metadata for Docker
-           id: meta
-           uses: docker/metadata-action@v5
-           with:
-             images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-             tags: |
-               type=semver,pattern={{version}}
-               type=sha
-
-         - name: Build and push Docker image
-           uses: docker/build-push-action@v5
-           with:
-             context: .
-             push: true
-             tags: ${{ steps.meta.outputs.tags }}
-             labels: ${{ steps.meta.outputs.labels }}
-   ```
-
-3. **Trigger Image Build**
-   ```bash
-   # Create and push a new version tag
-   git tag v1.0.0
-   git push origin v1.0.0
-   ```
-
-### Manual Image Build and Push
-```bash
-# Build locally
-docker build -t ghcr.io/your-username/k8s_test:latest .
-
-# Login to GHCR
-echo $GHCR_TOKEN | docker login ghcr.io -u $GHCR_USERNAME --password-stdin
-
-# Push image
-docker push ghcr.io/your-username/k8s_test:latest
-```
-
-### Image Versioning
-- Images are tagged with:
-  - Semantic version (from git tag): `v1.0.0`
-  - Git SHA: `sha-f2d3aa2`
-- Latest version is always available as `:latest`
-
-### Access Control
-1. Make your GitHub repository public or configure package access
-2. Navigate to package settings in GitHub
-3. Add collaborators or teams for private packages
-
-## Quick Start Guide
-
-1. **Set Up Repository**
-   ```bash
-   # Clone repository
-   git clone https://github.com/your-username/k8s_test.git
-   cd k8s_test
-   ```
-
-2. **Configure GitHub Actions**
-   - Add required secrets to repository
-   - Push code to trigger workflow
-
-3. **Deploy to Kubernetes**
-   ```bash
-   # Create required secrets and configmaps
-   kubectl create secret docker-registry ghcr-secret ...
-   kubectl create secret generic s3-secrets ...
-   kubectl apply -f matrix_config.yml
-
-   # Deploy application
-   kubectl apply -f python_image.yml
-   ```
-
-4. **Monitor Deployment**
-   ```bash
-   # Watch pod status
-   kubectl get pods -w
-   ```
-
-## Troubleshooting
-
-### Common Issues
-1. Pod stuck in "Pending" state:
-   ```bash
-   kubectl describe pod python-test
-   ```
-   - Check for GPU availability
-   - Verify node selector/runtime class
-
-2. Image pull errors:
-   ```bash
-   kubectl describe pod python-test | grep -A 10 Events
-   ```
-   - Verify ghcr-secret is correctly configured
-   - Check image name and tag
-
-3. S3 connection issues:
-   ```bash
-   kubectl logs python-test
-   ```
-   - Verify s3-secrets values
-   - Check S3 endpoint accessibility
+Each result file contains:
+- Device information (GPU model, memory)
+- Matrix sizes tested
+- CPU and GPU execution times
+- Speedup calculations
 
 ## License
-
 Unicas & Seeweb

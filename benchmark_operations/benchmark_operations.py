@@ -5,6 +5,7 @@ from rich.console import Console
 
 console = Console()
 
+
 class BenchmarkOperations:
     def __init__(self):
         """Initialize benchmark operations with CUDA availability check"""

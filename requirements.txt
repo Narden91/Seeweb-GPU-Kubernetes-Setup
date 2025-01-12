@@ -7,3 +7,5 @@ torchvision
 torchaudio
 numpy
 typing
+pandas
+botocore

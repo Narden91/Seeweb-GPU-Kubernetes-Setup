@@ -2,10 +2,16 @@ import argparse
 import os
 from rich.console import Console
 from rich.panel import Panel
+from dotenv import load_dotenv
+
 
 console = Console()
 
+
 class CLIOperations:
+    def __init__(self):
+        load_dotenv()
+        
     @staticmethod
     def parse_matrix_sizes(sizes_str):
         """
