@@ -201,13 +201,13 @@ python main.py --mode image \
 ```bash
 # Check pod status
 kubectl get pods
-kubectl describe pod python-test
+kubectl describe pod k8s-test
 
 # View logs
-kubectl logs -f python-test
+kubectl logs -f k8s-test
 
 # Check GPU status
-kubectl exec -it python-test -- nvidia-smi
+kubectl exec -it k8s-test -- nvidia-smi
 ```
 
 ### Common Issues and Solutions
