@@ -41,7 +41,7 @@ Results are stored in S3-compatible storage, and container images are managed th
 
 ## Project Structure
 ```
-gpu-processing-framework/
+k8s_test/
 ├── benchmark_operations/      # Matrix multiplication operations
 │   └── benchmark_operations.py
 ├── image_processing/         # Image processing operations
@@ -147,7 +147,7 @@ kubectl create configmap prj-configmap \
   --from-literal=RESULTS_FOLDER="benchmark_results"
 ```
 
-### 4. Deploy the Application
+### 4. Launch the Application
 ```bash
 kubectl apply -f manifest.yml
 ```
