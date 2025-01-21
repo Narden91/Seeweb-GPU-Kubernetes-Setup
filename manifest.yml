@@ -10,7 +10,7 @@ spec:
     - name: ghcr-secret
   containers:
   - name: nvidia
-    image: "ghcr.io/narden91/k8s_test:sha-f7dea0a"    
+    image: "ghcr.io/narden91/k8s_test:sha-790e655"    
     imagePullPolicy: Always
     resources:
       limits:

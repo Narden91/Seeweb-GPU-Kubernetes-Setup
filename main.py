@@ -116,6 +116,9 @@ def main():
         style="blue"
     ))
     
+    
+    print("\n")
+    
     # Initialize configuration handler for S3 access
     config = ConfigHandler()
     
