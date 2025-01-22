@@ -152,6 +152,13 @@ kubectl create configmap prj-configmap \
 kubectl apply -f manifest.yml
 ```
 
+### 5. Restart pod with new configmap
+1. Wait for pod to finish execution
+2. Apply updated ConfigMap
+3. `kubectl rollout restart deployment k8s-test`
+
+This will load your new ConfigMap settings into a fresh pod instance.
+
 ## CI/CD Pipeline
 The project uses GitHub Actions for automated builds and deployments:
 
