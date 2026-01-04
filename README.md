@@ -77,6 +77,51 @@ k8s_test/
 
 ---
 
+## 📦 Local Development with uv
+
+This project uses [uv](https://github.com/astral-sh/uv) for extremely fast Python package management.
+
+### 📥 Installation
+Using the standalone installer (recommended):
+
+```bash
+# On Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# On macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### 🚀 Getting Started
+
+1. **Initialize the Environment**:
+   This will create the virtual environment and install all dependencies defined in `pyproject.toml`.
+   ```bash
+   uv sync
+   ```
+
+2. **Run the Application**:
+   Execute the script within the managed environment:
+   ```bash
+   uv run python main.py
+   ```
+
+3. **Managing Dependencies**:
+   - **Add a new package**:
+     ```bash
+     uv add <package_name>
+     ```
+   - **Remove a package**:
+     ```bash
+     uv remove <package_name>
+     ```
+   - **Update dependencies**:
+     ```bash
+     uv lock --upgrade
+     ```
+
+---
+
 ## 🔧 Environment Variables
 Create a `.env` file based on `.env.test`:
 ```bash
