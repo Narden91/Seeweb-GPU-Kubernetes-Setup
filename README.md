@@ -164,10 +164,10 @@ kubectl create secret docker-registry ghcr-secret \
 
 # S3 credentials
 kubectl create secret generic s3-secrets \
-  --from-literal=S3_ENDPOINT_URL='your-s3-endpoint' \
-  --from-literal=AWS_ACCESS_KEY_ID='your-access-key' \
-  --from-literal=AWS_SECRET_ACCESS_KEY='your-secret-key' \
-  --from-literal=S3_BUCKET='your-bucket-name'
+  --from-literal=S3_ENDPOINT_URL=your-s3-endpoint \
+  --from-literal=AWS_ACCESS_KEY_ID=your-access-key \
+  --from-literal=AWS_SECRET_ACCESS_KEY=your-secret-key \
+  --from-literal=S3_BUCKET=your-bucket-name
 ```
 
 ### 🛠 3. Create ConfigMap
